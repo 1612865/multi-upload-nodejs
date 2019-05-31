@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Upload multiple file with percentage</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <style>
+        body {
+            padding-top: 5rem;
+        }
+
+        .starter-template {
+            padding: 3rem 1.5rem;
+            text-align: center;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+        <a class="navbar-brand" href="/">Upload multiple files</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault"
+            aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <main role="main" class="container">
+        <div class="starter-template">
+           <!--
+            <div class="progress">
+                <div class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar"
+                    aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progressbar">0%</div>
+            </div>
+           --> 
+            <div class="form-group">
+                <label for="multiPhotos">Choose multilple files ('.jpg', '.jpeg', '.png', '.gif', '.pdf' only)</label>
+                <input type="file" class="form-control-file" name="photos" multiple id="multiPhotos">
+                <button id="btnUpload" class="btn btn-primary">Upload</button>
+            </div>
+            <pre id="content">
+
+            </pre>
+            <div>
+                <ul class="list-group" id="result">
+                </ul>
+            </div>
+        </div>
+    </main>
+    <script>
+        $(document).ready((e) => {
+            function listTemplate(list) {
+                return list.map(item => {
+                    return `<a href='/${item.path}' target=_blank><li class="list-group-item">${item.originalname}</li></a>`
+                })
+            }
+
+            function upload(progressbar_id, url_id, file) {
+                let form_data = new FormData()
+                form_data.append("photos", file)
+                $("#" + progressbar_id)
+                    .css("width", "0%")
+                    .attr("aria-valuenow", 0)
+                    .text("0%");
+                $.ajax({
+                    url: '/upload',
+                    dataType: 'text',
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    data: form_data,
+                    type: 'post',
+                    success: (res) => {
+                        list = JSON.parse(res)
+                        $("#" + url_id).html(
+                            `<a href='/${list[0].path}' target=_blank>${list[0].originalname}</a>`)
+                    },
+                    xhr: function () {
+                        let xhr = $.ajaxSettings.xhr();
+                        xhr.upload.onprogress = function (evt) {
+                            let current_progress = parseInt(evt.loaded / evt.total *
+                                100)
+                            console.log('progress', current_progress)
+                            $("#" + progressbar_id)
+                                .css("width", current_progress + "%")
+                                .attr("aria-valuenow", current_progress)
+                                .text(current_progress + "% Complete");
+                        };
+                        xhr.upload.onload = function () {
+                            console.log('DONE!')
+                        };
+                        return xhr;
+                    },
+                    error: (res) => {
+                        alert('Error')
+                        console.log(res)
+                    }
+                })
+            }
+
+            function itemUploadTemplate(prefix, files){
+                let res = ''
+                for (let i = 0; i < files.length; i++) {
+                    res += `
+                    <li class="list-group-item">
+                        <h2>${files[i].name}</h2><br/>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0"
+                    aria-valuemax="100" id="${prefix + i + "_progressbar"}">0%</div>
+                        </div>
+                        <div id=${prefix + i + "_url"}></div>
+                    <li>
+                    `
+                }
+                return res
+            }
+            $('#btnUpload').on('click', () => {
+                let files = document.getElementById('multiPhotos').files;
+                let prefix = "file_"
+                $("#result").html(itemUploadTemplate(prefix, files))
+                form_data_list = []
+                for (let i = 0; i < files.length; i++) {
+                    upload(prefix + i + "_progressbar", prefix + i + "_url", files[i])
+                }
+            })
+            $('#1').on('click', () => {
+                $("#progressbar")
+                    .css("width", "0%")
+                    .attr("aria-valuenow", 0)
+                    .text("0%");
+                let form_data = new FormData();
+                let files = document.getElementById('multiPhotos').files;
+                console.log(files)
+                for (let x = 0; x < files.length; x++) {
+                    form_data.append("photos", files[x]);
+                }
+                $.ajax({
+                    url: '/upload',
+                    dataType: 'text',
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    data: form_data,
+                    type: 'post',
+                    success: (res) => {
+                        //$("#content").text(res)
+                        list = JSON.parse(res)
+                        $('#result').html(listTemplate(list))
+                    },
+                    xhr: function () {
+                        let xhr = $.ajaxSettings.xhr();
+                        xhr.upload.onprogress = function (evt) {
+                            let current_progress = parseInt(evt.loaded / evt.total *
+                                100)
+                            console.log('progress', current_progress)
+                            $("#progressbar")
+                                .css("width", current_progress + "%")
+                                .attr("aria-valuenow", current_progress)
+                                .text(current_progress + "% Complete");
+                        };
+                        xhr.upload.onload = function () {
+                            console.log('DONE!')
+                        };
+                        return xhr;
+                    },
+                    error: (res) => {
+                        $("#content").text(res)
+                    }
+                })
+            })
+        });
+    </script>
+</body>
+
+</html>
