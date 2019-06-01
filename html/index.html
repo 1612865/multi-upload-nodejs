@@ -32,7 +32,10 @@
         <div class="collapse navbar-collapse" id="navbarsExampleDefault">
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item active">
-                    <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+                    <a class="nav-link" href="index.html">Upload one by one<span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="upload_once.html">Upload all <span class="sr-only">(current)</span></a>
                 </li>
             </ul>
         </div>
@@ -127,11 +130,15 @@
                 }
                 return res
             }
-            $('#btnUpload').on('click', () => {
+            $("#multiPhotos").on('change', () => {
                 let files = document.getElementById('multiPhotos').files;
                 let prefix = "file_"
                 $("#result").html(itemUploadTemplate(prefix, files))
-                form_data_list = []
+            })
+
+            $('#btnUpload').on('click', () => {
+                let files = document.getElementById('multiPhotos').files;
+                let prefix = "file_"
                 for (let i = 0; i < files.length; i++) {
                     upload(prefix + i + "_progressbar", prefix + i + "_url", files[i])
                 }
